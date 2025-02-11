@@ -11,7 +11,7 @@ export default function UploadPage() {
   const [products, setProducts] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleUploadSuccess = (data) => {
+  const handleUploadSuccess = (data: any) => {
     setProducts(data);
   };
 

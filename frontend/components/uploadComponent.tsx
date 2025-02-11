@@ -54,6 +54,7 @@ export default function DarkUploadComponent({ onUploadSuccess }: UploadComponent
 
       const data = await response.json();
       if (response.ok) {
+        console.log(data)
         onUploadSuccess(data);
         setStatus("success");
       } else {

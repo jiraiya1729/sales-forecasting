@@ -1,36 +1,64 @@
-"use client"
-import React from 'react';
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ExternalLink, Sparkles, Package } from "lucide-react";
-import { useRouter } from "next/router";
-import Link from "next/link"
+import { ExternalLink, Sparkles, Package, ArrowUp, ArrowDown } from "lucide-react";
 
-interface Product {
+interface Sale {
   product_id: string;
   product_name: string;
   actual_price: string;
   product_link: string;
-  avg_sentiment: number;  // Added avg_sentiment field
+  avg_sentiment: number;
 }
 
-interface ProductListProps {
-  products: Product[];
-}
+export default function Home() {
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [data, setData] = useState<Sale[]>([]);
 
-export default function DarkProductList({ products }: ProductListProps) {
+  useEffect(() => {
+    const fetchData = async () => {
+      setStatus("loading");
+      try {
+        const response = await fetch("http://127.0.0.1:8000/sales", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+          setData(result);
+          setStatus("success");
+        } else {
+          setStatus("error");
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        setStatus("error");
+      }
+    };
+
+    fetchData();
+  }, []);
   const truncateText = (text: string, maxLength: number) => {
     return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
   };
-  if (!products || products.length === 0) return null;
 
-  // Limit to the first 15 products
-  const limitedProducts = products.slice(0, 15);
-  // const router = useRouter();
+  if (status === "loading") {
+    return <div className="text-center text-gray-300">Loading data...</div>;
+  }
+
+  if (status === "error") {
+    return <div className="text-center text-red-400">Error fetching data.</div>;
+  }
+
+  if (!data || data.length === 0) return null;
 
   return (
     <div className="space-y-8 p-6 bg-gradient-to-br from-gray-900 to-gray-950">
-      {/* Header Banner */}
       <Card className="bg-gradient-to-r from-emerald-900 to-emerald-800 border-gray-800">
         <div className="absolute inset-0 bg-[url('/api/placeholder/400/100')] opacity-5 mix-blend-overlay" />
         <CardContent className="p-8">
@@ -38,24 +66,24 @@ export default function DarkProductList({ products }: ProductListProps) {
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-6 h-6 text-emerald-400" />
-                <h2 className="text-2xl font-bold text-gray-100">Top Recommended Products</h2>
+                <h2 className="text-2xl font-bold text-gray-100">Latest Sales Data</h2>
               </div>
               <p className="text-emerald-300/80">
-                Showcasing {limitedProducts.length} premium selections
+                Displaying all recent transactions
               </p>
             </div>
-            <Link href="/salesforecast">
-  <button className="bg-emerald-500/10 text-emerald-300 border-emerald-600/50 px-4 py-1.5 text-sm font-medium backdrop-blur-sm border rounded-md hover:bg-emerald-500/20 transition-all">
-    Go to Sales Forecast
-  </button>
-</Link>
+            <Badge 
+              variant="outline" 
+              className="bg-emerald-500/10 text-emerald-300 border-emerald-600/50 px-4 py-1.5 text-sm font-medium backdrop-blur-sm"
+            >
+              Live Data
+            </Badge>
           </div>
         </CardContent>
       </Card>
 
-      {/* Products Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {limitedProducts.map((item, index) => (
+        {data.map((item, index) => (
           <Card 
             key={index} 
             className="group relative overflow-hidden transition-all duration-300 hover:shadow-xl 
@@ -69,7 +97,7 @@ export default function DarkProductList({ products }: ProductListProps) {
                   <div className="flex items-center gap-2">
                     <Package className="w-5 h-5 text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                     <h3 className="font-semibold text-gray-100 text-lg truncate group-hover:text-emerald-300 transition-colors">
-                    {truncateText(item.product_name, 20)}
+                    {truncateText(item.product_name, 30)}
                     </h3>
                   </div>
                   <Badge variant="secondary" className="shrink-0 bg-gray-800 text-emerald-400 border-gray-700">
@@ -83,9 +111,16 @@ export default function DarkProductList({ products }: ProductListProps) {
                   </span>
                 </div>
 
-                <div className="text-sm text-gray-400">
+                <div className="flex items-center text-sm text-gray-400">
                   <strong className="text-emerald-300">Sentiment Score: </strong>
-                  {item.avg_sentiment}
+                  <span className="ml-2 flex items-center">
+                    {item.avg_sentiment}
+                    {item.avg_sentiment > 0.5 ? (
+                      <ArrowUp className="w-4 h-4 text-green-500 ml-1" />
+                    ) : (
+                      <ArrowDown className="w-4 h-4 text-red-500 ml-1" />
+                    )}
+                  </span>
                 </div>
 
                 <a
